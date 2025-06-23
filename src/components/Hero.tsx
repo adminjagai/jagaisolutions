@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
+import BookingForm from './BookingForm';
 
 const Hero: React.FC = () => {
   return (
@@ -26,8 +27,8 @@ const Hero: React.FC = () => {
       ></div>
       
       <div className="container-custom relative z-10">
-        <div className="flex flex-col md:flex-row items-center">
-          <div className="md:w-1/2 md:pr-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -86,28 +87,13 @@ const Hero: React.FC = () => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="md:w-1/2 mt-12 md:mt-0"
+            className="mt-12 lg:mt-0"
           >
-            <div className="relative group">
-              {/* Enhanced glow effect */}
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary-500 to-primary-700 rounded-xl opacity-10 group-hover:opacity-20 blur-xl transition-all duration-500"></div>
-              <div className="absolute -inset-2 bg-gradient-to-r from-primary-300/10 to-primary-500/10 rounded-xl opacity-20 group-hover:opacity-30 blur-2xl transition-all duration-500"></div>
-              
-              {/* Glass card with enhanced styling */}
-              <div className="glass-card p-6 relative backdrop-blur-xl overflow-hidden bg-dark-900/50">
-                <div className="absolute inset-0 bg-gradient-to-tr from-dark-900/50 to-dark-800/30 rounded-xl"></div>
-                <img 
-                  src="/pexels-pixabay-373543.jpg" 
-                  alt="AI Technology Visualization"
-                  className="w-full h-auto rounded-lg object-cover shadow-lg transform group-hover:scale-[1.02] transition-transform duration-500"
-                  style={{
-                    filter: 'brightness(0.85) contrast(1.1)',
-                    imageRendering: 'high-quality'
-                  }}
-                  loading="eager"
-                />
-              </div>
-            </div>
+            <BookingForm
+              bookingType="call"
+              title="Book a Quick Call"
+              description="Schedule a 15-minute discovery call to discuss your needs."
+            />
           </motion.div>
         </div>
       </div>
