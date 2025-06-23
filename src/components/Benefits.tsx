@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
+import { Link } from 'react-router-dom';
 import * as LucideIcons from 'lucide-react';
 import { benefits } from '../data/content';
 
@@ -97,9 +98,9 @@ const Benefits: React.FC = () => {
             <p className="text-lg mb-6 max-w-2xl mx-auto">
               Join the hundreds of businesses that have transformed their operations with our intelligent solutions.
             </p>
-            <a href="#contact" className="btn btn-primary">
+            <Link to="/book-consultation" className="btn btn-primary">
               Start Your AI Journey
-            </a>
+            </Link>
           </div>
         </motion.div>
       </div>

@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { ArrowRight, MessagesSquare, BarChart, Users } from 'lucide-react';
-import ContactForm from './ContactForm';
+import { Link } from 'react-router-dom';
 
 const CallToAction: React.FC = () => {
   const [ref, inView] = useInView({
@@ -30,7 +30,7 @@ const CallToAction: React.FC = () => {
           </span>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Transform Your Business?</h2>
           <p className="text-lg text-gray-700 max-w-2xl mx-auto">
-            Book a free consultation with our AI experts to discover how we can help you achieve your business goals.
+            Choose the perfect starting point for your AI journey. Whether you need a quick overview or comprehensive strategy, we're here to help.
           </p>
         </motion.div>
 
@@ -98,8 +98,64 @@ const CallToAction: React.FC = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={inView ? { opacity: 1, x: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.4 }}
+            className="space-y-6"
           >
-            <ContactForm />
+            {/* Quick Call Option */}
+            <div className="glass-card p-6 border-2 border-primary-200 hover:border-primary-300 transition-colors">
+              <div className="flex items-center mb-4">
+                <div className="p-2 bg-primary-100 rounded-lg text-primary-600 mr-3">
+                  <MessagesSquare size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold">Quick Discovery Call</h3>
+                  <p className="text-gray-600 text-sm">15 minutes • Perfect for initial exploration</p>
+                </div>
+              </div>
+              <p className="text-gray-700 mb-4">
+                Not sure where to start? Book a brief call to discuss your challenges and see if AI is right for your business.
+              </p>
+              <ul className="text-sm text-gray-600 mb-6 space-y-1">
+                <li>• Quick needs assessment</li>
+                <li>• AI opportunity overview</li>
+                <li>• No commitment required</li>
+              </ul>
+              <Link 
+                to="/book-call" 
+                className="btn btn-outline border-primary-500 text-primary-600 hover:bg-primary-50 w-full justify-center"
+              >
+                Book Discovery Call
+                <ArrowRight size={16} className="ml-2" />
+              </Link>
+            </div>
+
+            {/* Full Consultation Option */}
+            <div className="glass-card p-6 border-2 border-secondary-200 hover:border-secondary-300 transition-colors">
+              <div className="flex items-center mb-4">
+                <div className="p-2 bg-secondary-100 rounded-lg text-secondary-600 mr-3">
+                  <BarChart size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold">Free Strategy Consultation</h3>
+                  <p className="text-gray-600 text-sm">45-60 minutes • Comprehensive planning session</p>
+                </div>
+              </div>
+              <p className="text-gray-700 mb-4">
+                Ready to dive deep? Get a complete AI strategy with actionable recommendations and implementation roadmap.
+              </p>
+              <ul className="text-sm text-gray-600 mb-6 space-y-1">
+                <li>• Detailed business analysis</li>
+                <li>• Custom solution design</li>
+                <li>• ROI projections & timeline</li>
+                <li>• Written consultation report</li>
+              </ul>
+              <Link 
+                to="/book-consultation" 
+                className="btn btn-primary w-full justify-center"
+              >
+                Book Free Consultation
+                <ArrowRight size={16} className="ml-2" />
+              </Link>
+            </div>
           </motion.div>
         </div>
       </div>

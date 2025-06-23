@@ -1,12 +1,10 @@
 import React, { useEffect } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import Hero from './components/Hero';
-import Services from './components/Services';
-import Benefits from './components/Benefits';
-import Testimonials from './components/Testimonials';
-import FAQ from './components/FAQ';
-import CallToAction from './components/CallToAction';
 import Footer from './components/Footer';
+import HomePage from './pages/HomePage';
+import BookCallPage from './pages/BookCallPage';
+import BookConsultationPage from './pages/BookConsultationPage';
 
 function App() {
   useEffect(() => {
@@ -18,12 +16,11 @@ function App() {
     <div className="min-h-screen bg-white">
       <Navbar />
       <main>
-        <Hero />
-        <Services />
-        <Benefits />
-        <Testimonials />
-        <FAQ />
-        <CallToAction />
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/book-call" element={<BookCallPage />} />
+          <Route path="/book-consultation" element={<BookConsultationPage />} />
+        </Routes>
       </main>
       <Footer />
     </div>

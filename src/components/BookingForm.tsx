@@ -100,6 +100,32 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
     return newErrors;
   };
 
+  const sendNotifications = async (bookingId: string) => {
+    try {
+      const notificationUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-notification`;
+      
+      await fetch(notificationUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          bookingId,
+          bookingType,
+          customerName: `${formData.firstName} ${formData.lastName}`,
+          customerEmail: formData.email,
+          preferredDate: formData.preferredDate,
+          preferredTime: formData.preferredTime,
+          message: formData.message || undefined,
+        }),
+      });
+    } catch (error) {
+      console.warn('Failed to send notifications:', error);
+      // Don't fail the booking if notifications fail
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -142,6 +168,11 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
           setErrors({ submit: result.error || 'Failed to submit booking' });
         }
         return;
+      }
+      
+      // Send notifications after successful booking
+      if (result.booking?.id) {
+        await sendNotifications(result.booking.id);
       }
       
       setIsSubmitted(true);
@@ -194,9 +225,14 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
               <Check size={32} />
             </div>
             <h4 className="text-xl font-semibold mb-2 text-white">Booking Confirmed!</h4>
-            <p className="text-gray-300">
+            <p className="text-gray-300 mb-4">
               Thank you for your booking. We'll contact you shortly to confirm the details.
             </p>
+            <div className="bg-primary-900/20 border border-primary-800/30 p-4 rounded-lg">
+              <p className="text-sm text-primary-200">
+                <strong>What's Next:</strong> You'll receive a confirmation email with meeting details and a calendar invitation within 24 hours.
+              </p>
+            </div>
           </motion.div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -324,7 +360,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
             <div>
               <label htmlFor="message" className="block text-sm font-medium text-gray-300 mb-1">
                 <MessageSquare size={16} className="inline mr-1" />
-                Additional Message
+                {bookingType === 'consultation' ? 'Project Details & Goals' : 'Additional Message'}
+                {bookingType === 'consultation' && ' *'}
               </label>
               <textarea
                 id="message"
@@ -332,9 +369,19 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
                 value={formData.message}
                 onChange={handleChange}
                 rows={4}
+                required={bookingType === 'consultation'}
                 className="w-full px-4 py-2 bg-dark-800 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-white"
-                placeholder="Tell us about your project or any specific requirements..."
+                placeholder={
+                  bookingType === 'consultation' 
+                    ? "Please describe your business challenges, goals, and what you hope to achieve with AI automation..."
+                    : "Tell us about your project or any specific requirements..."
+                }
               ></textarea>
+              {bookingType === 'consultation' && (
+                <p className="text-xs text-gray-400 mt-1">
+                  Help us prepare for your consultation by sharing your specific needs and objectives.
+                </p>
+              )}
             </div>
             
             <button

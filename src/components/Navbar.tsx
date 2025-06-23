@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Link, useLocation } from 'react-router-dom';
 import { navItems } from '../data/content';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -23,6 +25,23 @@ const Navbar: React.FC = () => {
     };
   }, []);
 
+  const isHomePage = location.pathname === '/';
+
+  const handleNavClick = (href: string) => {
+    setIsOpen(false);
+    
+    if (href.startsWith('#') && !isHomePage) {
+      // If we're not on home page and clicking a hash link, go to home first
+      window.location.href = `/${href}`;
+    } else if (href.startsWith('#') && isHomePage) {
+      // If we're on home page, smooth scroll to section
+      const element = document.querySelector(href);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
   return (
     <nav 
       className={`fixed w-full top-0 z-50 transition-all duration-300 ${
@@ -39,7 +58,7 @@ const Navbar: React.FC = () => {
             transition={{ duration: 0.5 }}
             className="flex-1 flex justify-start"
           >
-            <div className="relative group">
+            <Link to="/" className="relative group">
               <div className="text-6xl font-bold relative inline-block">
                 <span className="bg-gradient-to-r from-primary-400 via-primary-300 to-primary-500 bg-clip-text text-transparent" 
                   style={{
@@ -58,7 +77,7 @@ const Navbar: React.FC = () => {
                   }}
                 ></div>
               </div>
-            </div>
+            </Link>
           </motion.div>
 
           {/* Desktop Navigation */}
@@ -69,22 +88,22 @@ const Navbar: React.FC = () => {
             className="hidden md:flex items-center space-x-8"
           >
             {navItems.map((item, index) => (
-              <a 
+              <button
                 key={index}
-                href={item.href}
+                onClick={() => handleNavClick(item.href)}
                 className={`text-sm font-medium transition-colors duration-200 ${
                   scrolled ? 'text-gray-300 hover:text-primary-300' : 'text-gray-200 hover:text-primary-300'
                 }`}
               >
                 {item.label}
-              </a>
+              </button>
             ))}
-            <a 
-              href="#contact" 
+            <Link 
+              to="/book-consultation" 
               className="btn btn-primary py-2 px-6"
             >
-              Book a Call
-            </a>
+              Book Consultation
+            </Link>
           </motion.div>
 
           {/* Mobile menu button */}
@@ -110,22 +129,30 @@ const Navbar: React.FC = () => {
           >
             <div className="flex flex-col space-y-4">
               {navItems.map((item, index) => (
-                <a 
+                <button
                   key={index}
-                  href={item.href}
-                  onClick={() => setIsOpen(false)}
-                  className="text-gray-200 hover:text-primary-300 font-medium"
+                  onClick={() => handleNavClick(item.href)}
+                  className="text-gray-200 hover:text-primary-300 font-medium text-left"
                 >
                   {item.label}
-                </a>
+                </button>
               ))}
-              <a 
-                href="#contact" 
-                onClick={() => setIsOpen(false)}
-                className="btn btn-primary w-full text-center"
-              >
-                Book a Call
-              </a>
+              <div className="flex flex-col space-y-2 pt-2">
+                <Link 
+                  to="/book-call" 
+                  onClick={() => setIsOpen(false)}
+                  className="btn btn-outline border-primary-300 text-primary-200 hover:bg-primary-900/30 text-center"
+                >
+                  Quick Call
+                </Link>
+                <Link 
+                  to="/book-consultation" 
+                  onClick={() => setIsOpen(false)}
+                  className="btn btn-primary text-center"
+                >
+                  Book Consultation
+                </Link>
+              </div>
             </div>
           </motion.div>
         )}
