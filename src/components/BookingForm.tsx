@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Send, Check, Calendar, Clock, User, Mail, Phone, MessageSquare } from 'lucide-react';
+import { Send, Check, User, Mail, Phone, MessageSquare } from 'lucide-react';
+import DateTimePicker from './DateTimePicker';
 
 interface BookingFormProps {
   bookingType: 'call' | 'consultation';
@@ -31,74 +32,85 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Get minimum date (today)
-  const getMinDate = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  };
-
-  // Get minimum time for today
-  const getMinTime = () => {
-    const now = new Date();
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    
-    // If it's today, set minimum time to current time + 1 hour
-    if (formData.preferredDate === getMinDate()) {
-      const minHour = currentHour + 1;
-      return `${minHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
-    }
-    
-    return '09:00'; // Default business hours start
-  };
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Clear error when user starts typing
-    if (error) setError(null);
+    // Clear specific field error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
-  const validateForm = (): string | null => {
-    if (!formData.firstName.trim()) return 'First name is required';
-    if (!formData.lastName.trim()) return 'Last name is required';
-    if (!formData.email.trim()) return 'Email is required';
-    if (!formData.preferredDate) return 'Preferred date is required';
-    if (!formData.preferredTime) return 'Preferred time is required';
+  const handleDateChange = (date: string) => {
+    setFormData(prev => ({ ...prev, preferredDate: date }));
+    if (errors.preferredDate) {
+      setErrors(prev => ({ ...prev, preferredDate: '' }));
+    }
+  };
+
+  const handleTimeChange = (time: string) => {
+    setFormData(prev => ({ ...prev, preferredTime: time }));
+    if (errors.preferredTime) {
+      setErrors(prev => ({ ...prev, preferredTime: '' }));
+    }
+  };
+
+  const validateForm = (): Record<string, string> => {
+    const newErrors: Record<string, string> = {};
     
-    // Email validation
-    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-    if (!emailRegex.test(formData.email)) return 'Please enter a valid email address';
+    if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
+    if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else {
+      const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+      if (!emailRegex.test(formData.email)) {
+        newErrors.email = 'Please enter a valid email address';
+      }
+    }
+    
+    if (!formData.preferredDate) {
+      newErrors.preferredDate = 'Please select a preferred date';
+    }
+    
+    if (!formData.preferredTime) {
+      newErrors.preferredTime = 'Please select a preferred time';
+    }
     
     // Phone validation (if provided)
     if (formData.phoneNumber && !/^\+?[1-9]\d{1,14}$/.test(formData.phoneNumber.replace(/[\s\-\(\)]/g, ''))) {
-      return 'Please enter a valid phone number';
+      newErrors.phoneNumber = 'Please enter a valid phone number';
     }
     
-    // Date validation
-    const selectedDateTime = new Date(`${formData.preferredDate}T${formData.preferredTime}`);
-    const now = new Date();
-    if (selectedDateTime <= now) {
-      return 'Please select a future date and time';
+    // Date/time validation
+    if (formData.preferredDate && formData.preferredTime) {
+      const selectedDateTime = new Date(`${formData.preferredDate}T${formData.preferredTime}`);
+      const now = new Date();
+      const minBookingTime = new Date(now);
+      minBookingTime.setHours(now.getHours() + 24);
+      
+      if (selectedDateTime <= minBookingTime) {
+        newErrors.datetime = 'Please select a date and time at least 24 hours in advance';
+      }
     }
     
-    return null;
+    return newErrors;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
     
     setIsSubmitting(true);
-    setError(null);
+    setErrors({});
     
     try {
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/book-consultation`;
@@ -124,7 +136,12 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
       const result = await response.json();
       
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to submit booking');
+        if (response.status === 409) {
+          setErrors({ email: result.error || 'A booking with this email already exists' });
+        } else {
+          setErrors({ submit: result.error || 'Failed to submit booking' });
+        }
+        return;
       }
       
       setIsSubmitted(true);
@@ -144,11 +161,15 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
       }, 5000);
       
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+      setErrors({ submit: 'An unexpected error occurred. Please try again.' });
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const hasErrors = Object.keys(errors).length > 0;
+  const canSubmit = formData.firstName && formData.lastName && formData.email && 
+                   formData.preferredDate && formData.preferredTime && !hasErrors;
 
   return (
     <div className="glass-card p-6 md:p-8 relative overflow-hidden">
@@ -178,10 +199,17 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
             </p>
           </motion.div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
-                {error}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* General error message */}
+            {errors.submit && (
+              <div className="bg-red-900/20 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg">
+                {errors.submit}
+              </div>
+            )}
+            
+            {errors.datetime && (
+              <div className="bg-red-900/20 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg">
+                {errors.datetime}
               </div>
             )}
             
@@ -198,9 +226,16 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
                   value={formData.firstName}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 bg-dark-800 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-white"
+                  className={`w-full px-4 py-2 bg-dark-800 border rounded-lg focus:ring-2 transition-colors text-white ${
+                    errors.firstName 
+                      ? 'border-red-500 focus:ring-red-500' 
+                      : 'border-dark-600 focus:ring-primary-500 focus:border-primary-500'
+                  }`}
                   placeholder="John"
                 />
+                {errors.firstName && (
+                  <p className="text-red-400 text-sm mt-1">{errors.firstName}</p>
+                )}
               </div>
               
               <div>
@@ -215,9 +250,16 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
                   value={formData.lastName}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 bg-dark-800 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-white"
+                  className={`w-full px-4 py-2 bg-dark-800 border rounded-lg focus:ring-2 transition-colors text-white ${
+                    errors.lastName 
+                      ? 'border-red-500 focus:ring-red-500' 
+                      : 'border-dark-600 focus:ring-primary-500 focus:border-primary-500'
+                  }`}
                   placeholder="Doe"
                 />
+                {errors.lastName && (
+                  <p className="text-red-400 text-sm mt-1">{errors.lastName}</p>
+                )}
               </div>
             </div>
             
@@ -234,9 +276,16 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 bg-dark-800 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-white"
+                  className={`w-full px-4 py-2 bg-dark-800 border rounded-lg focus:ring-2 transition-colors text-white ${
+                    errors.email 
+                      ? 'border-red-500 focus:ring-red-500' 
+                      : 'border-dark-600 focus:ring-primary-500 focus:border-primary-500'
+                  }`}
                   placeholder="john@example.com"
                 />
+                {errors.email && (
+                  <p className="text-red-400 text-sm mt-1">{errors.email}</p>
+                )}
               </div>
               
               <div>
@@ -250,47 +299,27 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
                   name="phoneNumber"
                   value={formData.phoneNumber}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 bg-dark-800 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-white"
+                  className={`w-full px-4 py-2 bg-dark-800 border rounded-lg focus:ring-2 transition-colors text-white ${
+                    errors.phoneNumber 
+                      ? 'border-red-500 focus:ring-red-500' 
+                      : 'border-dark-600 focus:ring-primary-500 focus:border-primary-500'
+                  }`}
                   placeholder="+1 (555) 123-4567"
                 />
+                {errors.phoneNumber && (
+                  <p className="text-red-400 text-sm mt-1">{errors.phoneNumber}</p>
+                )}
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="preferredDate" className="block text-sm font-medium text-gray-300 mb-1">
-                  <Calendar size={16} className="inline mr-1" />
-                  Preferred Date *
-                </label>
-                <input
-                  type="date"
-                  id="preferredDate"
-                  name="preferredDate"
-                  value={formData.preferredDate}
-                  onChange={handleChange}
-                  min={getMinDate()}
-                  required
-                  className="w-full px-4 py-2 bg-dark-800 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-white"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="preferredTime" className="block text-sm font-medium text-gray-300 mb-1">
-                  <Clock size={16} className="inline mr-1" />
-                  Preferred Time *
-                </label>
-                <input
-                  type="time"
-                  id="preferredTime"
-                  name="preferredTime"
-                  value={formData.preferredTime}
-                  onChange={handleChange}
-                  min={getMinTime()}
-                  required
-                  className="w-full px-4 py-2 bg-dark-800 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-white"
-                />
-              </div>
-            </div>
+            {/* Advanced Date/Time Picker */}
+            <DateTimePicker
+              selectedDate={formData.preferredDate}
+              selectedTime={formData.preferredTime}
+              onDateChange={handleDateChange}
+              onTimeChange={handleTimeChange}
+              error={errors.preferredDate || errors.preferredTime}
+            />
             
             <div>
               <label htmlFor="message" className="block text-sm font-medium text-gray-300 mb-1">
@@ -310,10 +339,12 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
             
             <button
               type="submit"
-              disabled={isSubmitting}
-              className={`w-full btn ${
-                isSubmitting ? 'bg-gray-600' : 'bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700'
-              } text-white font-medium py-3 rounded-lg transition-all duration-300 flex items-center justify-center`}
+              disabled={isSubmitting || !canSubmit}
+              className={`w-full btn font-medium py-3 rounded-lg transition-all duration-300 flex items-center justify-center ${
+                isSubmitting || !canSubmit
+                  ? 'bg-gray-600 cursor-not-allowed' 
+                  : 'bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700'
+              } text-white`}
             >
               {isSubmitting ? (
                 <span className="flex items-center">
@@ -330,6 +361,12 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
                 </span>
               )}
             </button>
+            
+            {!canSubmit && (
+              <p className="text-sm text-gray-400 text-center">
+                Please fill in all required fields to enable booking
+              </p>
+            )}
             
             <p className="text-xs text-gray-400 mt-4 text-center">
               By submitting this form, you agree to our privacy policy and terms of service.
