@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MessageSquare, BarChart, Users, Lightbulb, Target, Zap } from 'lucide-react';
+import { ArrowLeft, MessageSquare, BarChart, Users, Lightbulb, Target, Zap, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BookingForm from '../components/BookingForm';
 
@@ -50,8 +50,26 @@ const BookConsultationPage: React.FC = () => {
                   <MessageSquare size={32} />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-white mb-2">Free Strategy Consultation</h1>
-                  <p className="text-gray-300">45-60 minute deep-dive session to create your AI roadmap</p>
+                  <h1 className="text-3xl font-bold text-white mb-2">Free 30-Minute Consultation</h1>
+                  <p className="text-gray-300">Comprehensive strategy session to create your AI roadmap</p>
+                </div>
+              </div>
+
+              {/* 48-Hour Notice Requirement */}
+              <div className="bg-amber-900/20 border border-amber-800/30 p-4 rounded-lg mb-6">
+                <div className="flex items-start">
+                  <Clock size={20} className="text-amber-400 mr-3 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-amber-300 mb-2">48-Hour Advance Notice Required</h3>
+                    <p className="text-sm text-amber-200 mb-2">
+                      To schedule a free 30-minute consultation, please provide at least 48 hours advance notice. 
+                      This allows us to properly research your case and prepare to provide the most valuable guidance during our meeting.
+                    </p>
+                    <p className="text-sm text-amber-200">
+                      <strong>Important:</strong> Free consultations must be booked through our online scheduling system, 
+                      and all appointment requests with less than 48 hours notice will need to be rescheduled.
+                    </p>
+                  </div>
                 </div>
               </div>
 

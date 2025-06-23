@@ -29,11 +29,15 @@ const validatePhoneNumber = (phone: string): boolean => {
   return phoneRegex.test(phone);
 };
 
-const validateFutureDate = (dateString: string, timeString: string): boolean => {
+const validateFutureDate = (dateString: string, timeString: string, bookingType: 'call' | 'consultation'): boolean => {
   try {
     const combinedDateTime = new Date(`${dateString}T${timeString}`);
     const now = new Date();
-    return combinedDateTime > now;
+    const requiredAdvanceHours = bookingType === 'consultation' ? 48 : 24;
+    const minBookingTime = new Date(now);
+    minBookingTime.setHours(now.getHours() + requiredAdvanceHours);
+    
+    return combinedDateTime > minBookingTime;
   } catch {
     return false;
   }
@@ -114,10 +118,28 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Validate future date
-    if (!validateFutureDate(body.preferredDate, body.preferredTime)) {
+    // Validate message requirement for consultations
+    if (body.bookingType === 'consultation' && (!body.message || !body.message.trim())) {
       return new Response(
-        JSON.stringify({ error: 'Preferred date and time must be in the future' }),
+        JSON.stringify({ 
+          error: 'Brief description required for consultations',
+          details: 'Please provide a brief description of your needs to help us prepare for your consultation'
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Validate future date with appropriate advance notice
+    if (!validateFutureDate(body.preferredDate, body.preferredTime, body.bookingType)) {
+      const advanceText = body.bookingType === 'consultation' ? '48 hours' : '24 hours';
+      return new Response(
+        JSON.stringify({ 
+          error: `Insufficient advance notice`,
+          details: `${body.bookingType === 'consultation' ? 'Consultations' : 'Calls'} must be scheduled at least ${advanceText} in advance. Please select a different time.`
+        }),
         {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -8,6 +8,7 @@ import {
   isDateAvailable,
   getHolidayName,
   isWeekend,
+  getAdvanceNoticeText,
   TimeSlot 
 } from '../utils/dateUtils';
 
@@ -16,6 +17,7 @@ interface DateTimePickerProps {
   selectedTime: string;
   onDateChange: (date: string) => void;
   onTimeChange: (time: string) => void;
+  bookingType: 'call' | 'consultation';
   error?: string;
 }
 
@@ -24,6 +26,7 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({
   selectedTime,
   onDateChange,
   onTimeChange,
+  bookingType,
   error
 }) => {
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
@@ -33,12 +36,13 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({
   const [showTimePicker, setShowTimePicker] = useState(false);
 
   const userTimezone = getUserTimezone();
+  const advanceNoticeText = getAdvanceNoticeText(bookingType);
 
   useEffect(() => {
     // Load available dates on component mount
-    const dates = getAvailableDates();
+    const dates = getAvailableDates(bookingType);
     setAvailableDates(dates);
-  }, []);
+  }, [bookingType]);
 
   useEffect(() => {
     // Generate time slots when date is selected
@@ -46,14 +50,14 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({
       setIsLoadingTimes(true);
       // Simulate loading delay for better UX
       setTimeout(() => {
-        const slots = generateTimeSlots(selectedDate);
+        const slots = generateTimeSlots(selectedDate, bookingType);
         setTimeSlots(slots);
         setIsLoadingTimes(false);
       }, 300);
     } else {
       setTimeSlots([]);
     }
-  }, [selectedDate]);
+  }, [selectedDate, bookingType]);
 
   const handleDateSelect = (date: Date) => {
     const dateString = date.toISOString().split('T')[0];
@@ -80,7 +84,7 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({
   };
 
   const isDateDisabled = (date: Date): boolean => {
-    return !isDateAvailable(date);
+    return !isDateAvailable(date, bookingType);
   };
 
   const getDateDisabledReason = (date: Date): string => {
@@ -92,11 +96,25 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Timezone Info */}
+      {/* Timezone and Advance Notice Info */}
       <div className="flex items-center text-sm text-gray-400 bg-dark-800/50 p-3 rounded-lg">
         <Info size={16} className="mr-2 text-primary-400" />
         <span>All times shown in your local timezone: {userTimezone}</span>
       </div>
+
+      {bookingType === 'consultation' && (
+        <div className="bg-amber-900/20 border border-amber-800/30 p-4 rounded-lg">
+          <div className="flex items-start">
+            <AlertCircle size={16} className="text-amber-400 mr-2 mt-0.5 flex-shrink-0" />
+            <div>
+              <h4 className="text-sm font-medium text-amber-300 mb-1">48-Hour Advance Notice Required</h4>
+              <p className="text-xs text-amber-200">
+                Free consultations require at least 48 hours advance notice to allow us to properly research your case and prepare valuable guidance for our meeting.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Date Selection */}
@@ -123,7 +141,9 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({
           {showDatePicker && (
             <div className="absolute z-50 mt-2 w-full bg-dark-800 border border-dark-600 rounded-lg shadow-xl max-h-64 overflow-y-auto">
               <div className="p-2">
-                <div className="text-sm text-gray-400 mb-2 px-2">Available dates (excluding weekends and holidays)</div>
+                <div className="text-sm text-gray-400 mb-2 px-2">
+                  Available dates (excluding weekends and holidays, {advanceNoticeText})
+                </div>
                 {availableDates.map((date, index) => (
                   <button
                     key={index}
@@ -217,10 +237,13 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({
       <div className="bg-primary-900/20 border border-primary-800/30 p-4 rounded-lg">
         <h4 className="text-sm font-medium text-primary-300 mb-2">Booking Requirements:</h4>
         <ul className="text-xs text-gray-400 space-y-1">
-          <li>• Bookings must be made at least 24 hours in advance</li>
+          <li>• {bookingType === 'consultation' ? 'Consultations' : 'Calls'} must be booked {advanceNoticeText}</li>
           <li>• Available Monday through Friday, 9:00 AM - 5:00 PM</li>
           <li>• No bookings on weekends or major holidays</li>
           <li>• Times shown in your local timezone ({userTimezone})</li>
+          {bookingType === 'consultation' && (
+            <li>• Please include a brief description of your needs when booking</li>
+          )}
         </ul>
       </div>
 

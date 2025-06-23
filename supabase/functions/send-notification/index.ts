@@ -18,8 +18,9 @@ const corsHeaders = {
 
 // Email template for team notifications
 const generateTeamNotificationEmail = (booking: NotificationRequest): string => {
-  const bookingTypeLabel = booking.bookingType === 'call' ? 'Discovery Call' : 'Strategy Consultation';
-  const duration = booking.bookingType === 'call' ? '15 minutes' : '45-60 minutes';
+  const bookingTypeLabel = booking.bookingType === 'call' ? 'Discovery Call' : 'Free Consultation';
+  const duration = booking.bookingType === 'call' ? '15 minutes' : '30 minutes';
+  const advanceNotice = booking.bookingType === 'consultation' ? '48 hours' : '24 hours';
   
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -35,6 +36,7 @@ const generateTeamNotificationEmail = (booking: NotificationRequest): string => 
           <p><strong>Name:</strong> ${booking.customerName}</p>
           <p><strong>Email:</strong> ${booking.customerEmail}</p>
           <p><strong>Booking Type:</strong> ${bookingTypeLabel} (${duration})</p>
+          <p><strong>Advance Notice:</strong> ${advanceNotice} requirement met ✓</p>
         </div>
         
         <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
@@ -51,18 +53,20 @@ const generateTeamNotificationEmail = (booking: NotificationRequest): string => 
         
         ${booking.message ? `
         <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-          <h3 style="color: #0047FF; margin-top: 0;">Customer Message</h3>
-          <p style="font-style: italic;">"${booking.message}"</p>
+          <h3 style="color: #0047FF; margin-top: 0;">${booking.bookingType === 'consultation' ? 'Customer Needs & Requirements' : 'Customer Message'}</h3>
+          <p style="font-style: italic; background: #f8f9fa; padding: 15px; border-left: 4px solid #0047FF;">"${booking.message}"</p>
+          ${booking.bookingType === 'consultation' ? '<p style="color: #666; font-size: 14px;"><strong>Note:</strong> Use this information to research their case and prepare valuable guidance for the consultation.</p>' : ''}
         </div>
         ` : ''}
         
         <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; border-left: 4px solid #0047FF;">
           <h3 style="color: #0047FF; margin-top: 0;">Next Steps</h3>
           <ol style="color: #333;">
-            <li>Review the customer's requirements</li>
+            <li>Review the customer's requirements${booking.bookingType === 'consultation' ? ' and research their case' : ''}</li>
             <li>Confirm the appointment time</li>
             <li>Send calendar invite to customer</li>
             <li>Prepare relevant materials for the session</li>
+            ${booking.bookingType === 'consultation' ? '<li>Prepare customized recommendations based on their needs</li>' : ''}
           </ol>
         </div>
       </div>
@@ -76,8 +80,8 @@ const generateTeamNotificationEmail = (booking: NotificationRequest): string => 
 
 // Customer confirmation email template
 const generateCustomerConfirmationEmail = (booking: NotificationRequest): string => {
-  const bookingTypeLabel = booking.bookingType === 'call' ? 'Discovery Call' : 'Strategy Consultation';
-  const duration = booking.bookingType === 'call' ? '15 minutes' : '45-60 minutes';
+  const bookingTypeLabel = booking.bookingType === 'call' ? 'Discovery Call' : 'Free Consultation';
+  const duration = booking.bookingType === 'call' ? '15 minutes' : '30 minutes';
   
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -108,6 +112,7 @@ const generateCustomerConfirmationEmail = (booking: NotificationRequest): string
             <li>Our team will review your booking within 24 hours</li>
             <li>You'll receive a calendar invitation with meeting details</li>
             <li>We'll send you a brief preparation guide</li>
+            ${booking.bookingType === 'consultation' ? '<li>We\'ll research your case using the information you provided</li>' : ''}
             <li>Join the session at your scheduled time</li>
           </ol>
         </div>
@@ -115,12 +120,12 @@ const generateCustomerConfirmationEmail = (booking: NotificationRequest): string
         ${booking.bookingType === 'consultation' ? `
         <div style="background: #fff3e0; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3 style="color: #f57c00; margin-top: 0;">Consultation Preparation</h3>
-          <p>To make the most of your strategy consultation, please consider:</p>
+          <p>We'll use the information you provided to research your case and prepare customized recommendations. To maximize our consultation time, please also consider:</p>
           <ul style="color: #333;">
-            <li>Current business challenges you'd like to address</li>
-            <li>Specific goals you want to achieve with AI</li>
-            <li>Any existing systems or processes you'd like to improve</li>
-            <li>Questions about AI implementation in your industry</li>
+            <li>Any additional business challenges you'd like to address</li>
+            <li>Specific questions about AI implementation in your industry</li>
+            <li>Current systems or processes you'd like to improve</li>
+            <li>Budget considerations and timeline expectations</li>
           </ul>
         </div>
         ` : ''}
@@ -130,6 +135,9 @@ const generateCustomerConfirmationEmail = (booking: NotificationRequest): string
           <p>If you need to change your appointment, please reply to this email or contact us at:</p>
           <p><strong>Email:</strong> info@jagaisolutions.com</p>
           <p><strong>Phone:</strong> (123) 456-7890</p>
+          <p style="color: #666; font-size: 14px; margin-top: 10px;">
+            <strong>Note:</strong> Please provide at least ${booking.bookingType === 'consultation' ? '48' : '24'} hours notice for any changes.
+          </p>
         </div>
       </div>
       
@@ -220,7 +228,8 @@ Deno.serve(async (req: Request) => {
         details: {
           teamNotificationSent: true,
           customerConfirmationSent: true,
-          bookingId: booking.bookingId
+          bookingId: booking.bookingId,
+          advanceNoticeRequirement: booking.bookingType === 'consultation' ? '48 hours' : '24 hours'
         }
       }),
       {

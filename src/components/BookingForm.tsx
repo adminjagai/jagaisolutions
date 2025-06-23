@@ -85,15 +85,22 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
       newErrors.phoneNumber = 'Please enter a valid phone number';
     }
     
-    // Date/time validation
+    // Message validation for consultations
+    if (bookingType === 'consultation' && !formData.message.trim()) {
+      newErrors.message = 'Please provide a brief description of your needs to help us prepare for your consultation';
+    }
+    
+    // Date/time validation with different advance notice requirements
     if (formData.preferredDate && formData.preferredTime) {
       const selectedDateTime = new Date(`${formData.preferredDate}T${formData.preferredTime}`);
       const now = new Date();
+      const requiredAdvanceHours = bookingType === 'consultation' ? 48 : 24;
       const minBookingTime = new Date(now);
-      minBookingTime.setHours(now.getHours() + 24);
+      minBookingTime.setHours(now.getHours() + requiredAdvanceHours);
       
       if (selectedDateTime <= minBookingTime) {
-        newErrors.datetime = 'Please select a date and time at least 24 hours in advance';
+        const advanceText = bookingType === 'consultation' ? '48 hours' : '24 hours';
+        newErrors.datetime = `Please select a date and time at least ${advanceText} in advance`;
       }
     }
     
@@ -164,6 +171,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
       if (!response.ok) {
         if (response.status === 409) {
           setErrors({ email: result.error || 'A booking with this email already exists' });
+        } else if (response.status === 400 && result.error.includes('advance')) {
+          const advanceText = bookingType === 'consultation' ? '48 hours' : '24 hours';
+          setErrors({ datetime: `Appointments with less than ${advanceText} notice will need to be rescheduled. Please select a different time.` });
         } else {
           setErrors({ submit: result.error || 'Failed to submit booking' });
         }
@@ -200,7 +210,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
 
   const hasErrors = Object.keys(errors).length > 0;
   const canSubmit = formData.firstName && formData.lastName && formData.email && 
-                   formData.preferredDate && formData.preferredTime && !hasErrors;
+                   formData.preferredDate && formData.preferredTime && 
+                   (bookingType === 'call' || formData.message.trim()) && !hasErrors;
 
   return (
     <div className="glass-card p-6 md:p-8 relative overflow-hidden">
@@ -230,7 +241,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
             </p>
             <div className="bg-primary-900/20 border border-primary-800/30 p-4 rounded-lg">
               <p className="text-sm text-primary-200">
-                <strong>What's Next:</strong> You'll receive a confirmation email with meeting details and a calendar invitation within 24 hours.
+                <strong>What's Next:</strong> You'll receive a confirmation email with meeting details and a calendar invitation within 24 hours. 
+                {bookingType === 'consultation' && ' We\'ll use the information you provided to research your case and prepare valuable guidance for our meeting.'}
               </p>
             </div>
           </motion.div>
@@ -354,13 +366,14 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
               selectedTime={formData.preferredTime}
               onDateChange={handleDateChange}
               onTimeChange={handleTimeChange}
+              bookingType={bookingType}
               error={errors.preferredDate || errors.preferredTime}
             />
             
             <div>
               <label htmlFor="message" className="block text-sm font-medium text-gray-300 mb-1">
                 <MessageSquare size={16} className="inline mr-1" />
-                {bookingType === 'consultation' ? 'Project Details & Goals' : 'Additional Message'}
+                {bookingType === 'consultation' ? 'Brief Description of Your Needs' : 'Additional Message'}
                 {bookingType === 'consultation' && ' *'}
               </label>
               <textarea
@@ -370,17 +383,24 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
                 onChange={handleChange}
                 rows={4}
                 required={bookingType === 'consultation'}
-                className="w-full px-4 py-2 bg-dark-800 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-white"
+                className={`w-full px-4 py-2 bg-dark-800 border rounded-lg focus:ring-2 transition-colors text-white ${
+                  errors.message 
+                    ? 'border-red-500 focus:ring-red-500' 
+                    : 'border-dark-600 focus:ring-primary-500 focus:border-primary-500'
+                }`}
                 placeholder={
                   bookingType === 'consultation' 
-                    ? "Please describe your business challenges, goals, and what you hope to achieve with AI automation..."
+                    ? "Please describe your business challenges, goals, and what you hope to achieve with AI automation. This helps us research your case and prepare valuable guidance for our meeting..."
                     : "Tell us about your project or any specific requirements..."
                 }
               ></textarea>
               {bookingType === 'consultation' && (
                 <p className="text-xs text-gray-400 mt-1">
-                  Help us prepare for your consultation by sharing your specific needs and objectives.
+                  This information helps us research your case and prepare to provide the most valuable guidance during our consultation.
                 </p>
+              )}
+              {errors.message && (
+                <p className="text-red-400 text-sm mt-1">{errors.message}</p>
               )}
             </div>
             
@@ -403,7 +423,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
                 </span>
               ) : (
                 <span className="flex items-center">
-                  Book Your {bookingType === 'call' ? 'Call' : 'Consultation'}
+                  Book Your {bookingType === 'call' ? 'Call' : 'Free Consultation'}
                   <Send size={16} className="ml-2" />
                 </span>
               )}
@@ -417,6 +437,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
             
             <p className="text-xs text-gray-400 mt-4 text-center">
               By submitting this form, you agree to our privacy policy and terms of service.
+              {bookingType === 'consultation' && ' All appointment requests with less than 48 hours notice will need to be rescheduled.'}
             </p>
           </form>
         )}

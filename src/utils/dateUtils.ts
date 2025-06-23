@@ -42,15 +42,16 @@ export const isHoliday = (date: Date): boolean => {
   return getAllHolidays().some(holiday => holiday.date === dateString);
 };
 
-// Check if a date is available for booking
-export const isDateAvailable = (date: Date): boolean => {
+// Check if a date is available for booking with different advance notice requirements
+export const isDateAvailable = (date: Date, bookingType: 'call' | 'consultation' = 'call'): boolean => {
   const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(now.getDate() + 1);
-  tomorrow.setHours(0, 0, 0, 0);
+  const advanceHours = bookingType === 'consultation' ? 48 : 24;
+  const minBookingTime = new Date(now);
+  minBookingTime.setHours(now.getHours() + advanceHours);
+  minBookingTime.setHours(0, 0, 0, 0); // Start of the minimum booking day
   
-  // Must be at least 24 hours in advance
-  if (date < tomorrow) return false;
+  // Must meet advance notice requirement
+  if (date < minBookingTime) return false;
   
   // Cannot be weekend
   if (isWeekend(date)) return false;
@@ -61,17 +62,20 @@ export const isDateAvailable = (date: Date): boolean => {
   return true;
 };
 
-// Get available dates for the next 60 days
-export const getAvailableDates = (): Date[] => {
+// Get available dates for the next 60 days with booking type consideration
+export const getAvailableDates = (bookingType: 'call' | 'consultation' = 'call'): Date[] => {
   const dates: Date[] = [];
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() + 1); // Start from tomorrow
+  const now = new Date();
+  const advanceHours = bookingType === 'consultation' ? 48 : 24;
+  const startDate = new Date(now);
+  startDate.setHours(now.getHours() + advanceHours);
+  startDate.setHours(0, 0, 0, 0); // Start of the minimum booking day
   
   for (let i = 0; i < 90; i++) { // Check 90 days to ensure we get enough available dates
     const date = new Date(startDate);
     date.setDate(startDate.getDate() + i);
     
-    if (isDateAvailable(date)) {
+    if (isDateAvailable(date, bookingType)) {
       dates.push(date);
     }
     
@@ -82,12 +86,12 @@ export const getAvailableDates = (): Date[] => {
   return dates;
 };
 
-// Generate time slots for business hours (9 AM - 5 PM)
-export const generateTimeSlots = (selectedDate: string): TimeSlot[] => {
+// Generate time slots for business hours (9 AM - 5 PM) with booking type consideration
+export const generateTimeSlots = (selectedDate: string, bookingType: 'call' | 'consultation' = 'call'): TimeSlot[] => {
   const slots: TimeSlot[] = [];
   const now = new Date();
   const selectedDateTime = new Date(selectedDate);
-  const isToday = selectedDateTime.toDateString() === now.toDateString();
+  const advanceHours = bookingType === 'consultation' ? 48 : 24;
   
   // Business hours: 9 AM to 5 PM (17:00)
   for (let hour = 9; hour < 17; hour++) {
@@ -95,9 +99,9 @@ export const generateTimeSlots = (selectedDate: string): TimeSlot[] => {
       const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
       const slotDateTime = new Date(`${selectedDate}T${timeString}`);
       
-      // Check if slot is in the future (24-hour advance notice)
+      // Check if slot meets advance notice requirement
       const minBookingTime = new Date(now);
-      minBookingTime.setHours(now.getHours() + 24);
+      minBookingTime.setHours(now.getHours() + advanceHours);
       
       const available = slotDateTime > minBookingTime;
       
@@ -137,4 +141,11 @@ export const getHolidayName = (date: Date): string | null => {
   const dateString = date.toISOString().split('T')[0];
   const holiday = getAllHolidays().find(h => h.date === dateString);
   return holiday ? holiday.name : null;
+};
+
+// Get advance notice requirement text
+export const getAdvanceNoticeText = (bookingType: 'call' | 'consultation'): string => {
+  return bookingType === 'consultation' 
+    ? 'at least 48 hours in advance' 
+    : 'at least 24 hours in advance';
 };
