@@ -247,10 +247,10 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
             
             <div className="bg-primary-900/20 border border-primary-800/30 p-6 rounded-lg mb-6">
               <p className="text-sm text-primary-200 mb-4">
-                <strong>Your booking confirmation has been sent to your email.</strong>
+                <strong>We will send a confirmation email when we have assigned an AI specialist to facilitate your company's needs.</strong>
               </p>
               <p className="text-sm text-primary-200">
-                You'll receive a confirmation email with meeting details and a calendar invitation within 24 hours. 
+                You'll receive meeting details and a calendar invitation within 24 hours. 
                 {bookingType === 'consultation' && ' We\'ll use the information you provided to research your case and prepare valuable guidance for our meeting.'}
               </p>
             </div>
