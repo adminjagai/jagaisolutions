@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Send, Check, User, Mail, Phone, MessageSquare, Home, ArrowRight } from 'lucide-react';
+import { Send, Check, User, Mail, Phone, MessageSquare, Home, ArrowRight, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DateTimePicker from './DateTimePicker';
 
@@ -188,25 +188,25 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
       
       setIsSubmitted(true);
       
-      // Reset form after showing success message for longer duration
-      setTimeout(() => {
-        setFormData({
-          firstName: '',
-          lastName: '',
-          email: '',
-          phoneNumber: '',
-          preferredDate: '',
-          preferredTime: '',
-          message: '',
-        });
-        setIsSubmitted(false);
-      }, 10000); // Extended to 10 seconds
-      
     } catch (err) {
       setErrors({ submit: 'An unexpected error occurred. Please try again.' });
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      phoneNumber: '',
+      preferredDate: '',
+      preferredTime: '',
+      message: '',
+    });
+    setIsSubmitted(false);
+    setErrors({});
   };
 
   const hasErrors = Object.keys(errors).length > 0;
@@ -215,72 +215,19 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
                    (bookingType === 'call' || formData.message.trim()) && !hasErrors;
 
   return (
-    <div className="glass-card p-6 md:p-8 relative overflow-hidden">
-      {/* Animated gradient border */}
-      <div className="absolute inset-0 rounded-xl border-2 border-transparent bg-transparent z-0">
-        <div className="absolute inset-[-2px] bg-gradient-to-r from-primary-400 via-secondary-500 to-accent-500 rounded-xl animate-shimmer opacity-50"></div>
-      </div>
-      
-      <div className="relative z-10">
-        <div className="text-center mb-6">
-          <h3 className="text-2xl font-bold mb-2">{title}</h3>
-          <p className="text-gray-300">{description}</p>
+    <>
+      <div className="glass-card p-6 md:p-8 relative overflow-hidden">
+        {/* Animated gradient border */}
+        <div className="absolute inset-0 rounded-xl border-2 border-transparent bg-transparent z-0">
+          <div className="absolute inset-[-2px] bg-gradient-to-r from-primary-400 via-secondary-500 to-accent-500 rounded-xl animate-shimmer opacity-50"></div>
         </div>
         
-        {isSubmitted ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="py-8 text-center"
-          >
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 text-green-600 mb-6">
-              <Check size={40} />
-            </div>
-            
-            <h4 className="text-2xl font-bold mb-4 text-white">
-              Thank you so much for scheduling a {bookingType === 'call' ? 'call' : 'consultation'} with us!
-            </h4>
-            
-            <p className="text-lg text-gray-300 mb-4">
-              We're excited to connect with you and discuss how we can help achieve your goals.
-            </p>
-            
-            <div className="bg-primary-900/20 border border-primary-800/30 p-6 rounded-lg mb-6">
-              <p className="text-sm text-primary-200 mb-4">
-                <strong>We will send a confirmation email when we have assigned an AI specialist to facilitate your company's needs.</strong>
-              </p>
-              <p className="text-sm text-primary-200">
-                You'll receive meeting details and a calendar invitation within 24 hours. 
-                {bookingType === 'consultation' && ' We\'ll use the information you provided to research your case and prepare valuable guidance for our meeting.'}
-              </p>
-            </div>
-            
-            <div className="bg-green-900/20 border border-green-800/30 p-4 rounded-lg mb-6">
-              <p className="text-sm text-green-200">
-                <strong>We look forward to speaking with you soon!</strong>
-              </p>
-            </div>
-            
-            <div className="space-y-4">
-              <p className="text-gray-300">
-                Click here to return to our homepage, where you can explore more of our services and resources while you wait for our upcoming conversation.
-              </p>
-              
-              <Link 
-                to="/" 
-                className="inline-flex items-center justify-center px-8 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 text-white font-medium rounded-lg transition-all duration-300 transform hover:scale-105"
-              >
-                <Home size={20} className="mr-2" />
-                Return to Homepage
-                <ArrowRight size={16} className="ml-2" />
-              </Link>
-              
-              <p className="text-xs text-gray-400 mt-4">
-                This page will automatically reset in a few moments.
-              </p>
-            </div>
-          </motion.div>
-        ) : (
+        <div className="relative z-10">
+          <div className="text-center mb-6">
+            <h3 className="text-2xl font-bold mb-2">{title}</h3>
+            <p className="text-gray-300">{description}</p>
+          </div>
+          
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* General error message */}
             {errors.submit && (
@@ -474,9 +421,126 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
               {bookingType === 'consultation' && ' All appointment requests with less than 48 hours notice will need to be rescheduled.'}
             </p>
           </form>
-        )}
+        </div>
       </div>
-    </div>
+
+      {/* Persistent Confirmation Modal Overlay */}
+      {isSubmitted && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+          {/* Backdrop - prevents interaction with page content */}
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
+          
+          {/* Modal Content */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="relative z-10 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto"
+          >
+            <div className="glass-card p-8 md:p-12 relative">
+              {/* Animated border effect */}
+              <div className="absolute inset-0 rounded-xl border-2 border-transparent bg-transparent">
+                <div className="absolute inset-[-2px] bg-gradient-to-r from-green-400 via-primary-500 to-green-400 rounded-xl animate-shimmer opacity-60"></div>
+              </div>
+              
+              <div className="relative z-10 text-center">
+                {/* Success Icon */}
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, duration: 0.5, type: "spring", stiffness: 200 }}
+                  className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-green-100 text-green-600 mb-8"
+                >
+                  <Check size={48} strokeWidth={3} />
+                </motion.div>
+                
+                {/* Main Heading */}
+                <motion.h2
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4, duration: 0.6 }}
+                  className="text-3xl md:text-4xl font-bold mb-6 text-white"
+                >
+                  Thank you so much for scheduling a {bookingType === 'call' ? 'call' : 'consultation'} with us!
+                </motion.h2>
+                
+                {/* Subtitle */}
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6, duration: 0.6 }}
+                  className="text-xl text-gray-300 mb-8"
+                >
+                  We're excited to connect with you and discuss how we can help achieve your goals.
+                </motion.p>
+                
+                {/* Confirmation Details */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.8, duration: 0.6 }}
+                  className="bg-primary-900/30 border border-primary-800/50 p-6 rounded-lg mb-8"
+                >
+                  <h3 className="text-lg font-semibold text-primary-200 mb-4">What Happens Next</h3>
+                  <p className="text-primary-200 mb-4">
+                    <strong>We will send a confirmation email when we have assigned an AI specialist to facilitate your company's needs.</strong>
+                  </p>
+                  <p className="text-sm text-primary-300">
+                    You'll receive meeting details and a calendar invitation within 24 hours.
+                    {bookingType === 'consultation' && ' We\'ll use the information you provided to research your case and prepare valuable guidance for our meeting.'}
+                  </p>
+                </motion.div>
+                
+                {/* Success Message */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1.0, duration: 0.6 }}
+                  className="bg-green-900/20 border border-green-800/30 p-6 rounded-lg mb-8"
+                >
+                  <p className="text-lg text-green-200 font-medium">
+                    We look forward to speaking with you soon!
+                  </p>
+                </motion.div>
+                
+                {/* Instructions */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1.2, duration: 0.6 }}
+                  className="mb-8"
+                >
+                  <p className="text-gray-300 mb-6">
+                    Click here to return to our homepage, where you can explore more of our services and resources while you wait for our upcoming conversation.
+                  </p>
+                  
+                  {/* Return Button */}
+                  <Link 
+                    to="/" 
+                    onClick={resetForm}
+                    className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                  >
+                    <Home size={24} className="mr-3" />
+                    Return to Homepage
+                    <ArrowRight size={20} className="ml-3" />
+                  </Link>
+                </motion.div>
+                
+                {/* Footer Note */}
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1.4, duration: 0.6 }}
+                  className="text-xs text-gray-500"
+                >
+                  This confirmation will remain visible until you return to the homepage
+                </motion.p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </>
   );
 };
 
