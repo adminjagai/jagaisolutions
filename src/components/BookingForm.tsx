@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Send, Check, User, Mail, Phone, MessageSquare } from 'lucide-react';
+import { Send, Check, User, Mail, Phone, MessageSquare, Home, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import DateTimePicker from './DateTimePicker';
 
 interface BookingFormProps {
@@ -187,7 +188,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
       
       setIsSubmitted(true);
       
-      // Reset form after showing success message
+      // Reset form after showing success message for longer duration
       setTimeout(() => {
         setFormData({
           firstName: '',
@@ -199,7 +200,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
           message: '',
         });
         setIsSubmitted(false);
-      }, 5000);
+      }, 10000); // Extended to 10 seconds
       
     } catch (err) {
       setErrors({ submit: 'An unexpected error occurred. Please try again.' });
@@ -217,7 +218,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
     <div className="glass-card p-6 md:p-8 relative overflow-hidden">
       {/* Animated gradient border */}
       <div className="absolute inset-0 rounded-xl border-2 border-transparent bg-transparent z-0">
-        <div className="absolute inset-[-2px] bg-gradient-to-r from-primary-500 via-secondary-500 to-accent-500 rounded-xl animate-shimmer opacity-50"></div>
+        <div className="absolute inset-[-2px] bg-gradient-to-r from-primary-400 via-secondary-500 to-accent-500 rounded-xl animate-shimmer opacity-50"></div>
       </div>
       
       <div className="relative z-10">
@@ -232,17 +233,50 @@ const BookingForm: React.FC<BookingFormProps> = ({ bookingType, title, descripti
             animate={{ opacity: 1, scale: 1 }}
             className="py-8 text-center"
           >
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-600 mb-4">
-              <Check size={32} />
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 text-green-600 mb-6">
+              <Check size={40} />
             </div>
-            <h4 className="text-xl font-semibold mb-2 text-white">Booking Confirmed!</h4>
-            <p className="text-gray-300 mb-4">
-              Thank you for your booking. We'll contact you shortly to confirm the details.
+            
+            <h4 className="text-2xl font-bold mb-4 text-white">
+              Thank you so much for scheduling a {bookingType === 'call' ? 'call' : 'consultation'} with us!
+            </h4>
+            
+            <p className="text-lg text-gray-300 mb-4">
+              We're excited to connect with you and discuss how we can help achieve your goals.
             </p>
-            <div className="bg-primary-900/20 border border-primary-800/30 p-4 rounded-lg">
+            
+            <div className="bg-primary-900/20 border border-primary-800/30 p-6 rounded-lg mb-6">
+              <p className="text-sm text-primary-200 mb-4">
+                <strong>Your booking confirmation has been sent to your email.</strong>
+              </p>
               <p className="text-sm text-primary-200">
-                <strong>What's Next:</strong> You'll receive a confirmation email with meeting details and a calendar invitation within 24 hours. 
+                You'll receive a confirmation email with meeting details and a calendar invitation within 24 hours. 
                 {bookingType === 'consultation' && ' We\'ll use the information you provided to research your case and prepare valuable guidance for our meeting.'}
+              </p>
+            </div>
+            
+            <div className="bg-green-900/20 border border-green-800/30 p-4 rounded-lg mb-6">
+              <p className="text-sm text-green-200">
+                <strong>We look forward to speaking with you soon!</strong>
+              </p>
+            </div>
+            
+            <div className="space-y-4">
+              <p className="text-gray-300">
+                Click here to return to our homepage, where you can explore more of our services and resources while you wait for our upcoming conversation.
+              </p>
+              
+              <Link 
+                to="/" 
+                className="inline-flex items-center justify-center px-8 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 text-white font-medium rounded-lg transition-all duration-300 transform hover:scale-105"
+              >
+                <Home size={20} className="mr-2" />
+                Return to Homepage
+                <ArrowRight size={16} className="ml-2" />
+              </Link>
+              
+              <p className="text-xs text-gray-400 mt-4">
+                This page will automatically reset in a few moments.
               </p>
             </div>
           </motion.div>
